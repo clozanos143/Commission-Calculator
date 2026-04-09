@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Commission Calculator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f2; color: #1a1a18; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; color: #1a1a18; }
+  h2 { font-size: 15px; font-weight: 500; color: #1a1a18; margin-bottom: 1rem; padding-bottom: 8px; border-bottom: 1px solid #eeecea; }
+  .card { background: #fff; border: 1px solid #e2e0d8; border-radius: 12px; padding: 1.25rem; margin-bottom: 12px; }
+  .field-label { font-size: 13px; color: #6b6a64; display: block; margin-bottom: 8px; }
+  .field-label small { font-size: 11px; color: #9b9a94; }
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+  .span2 { grid-column: span 2; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .four-col { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  .prefix-wrap { display: flex; align-items: center; }
+  .prefix { font-size: 15px; color: #6b6a64; padding: 0 10px; background: #f5f5f2; border: 1px solid #d8d6ce; border-radius: 8px 0 0 8px; height: 40px; display: flex; align-items: center; border-right: none; flex-shrink: 0; }
+  .pfx-input { border-radius: 0 8px 8px 0 !important; border-left: none !important; }
+  input[type="text"], input[type="number"] { height: 40px; font-size: 15px; width: 100%; border: 1px solid #d8d6ce; border-radius: 8px; padding: 0 12px; background: #fff; color: #1a1a18; outline: none; font-family: inherit; }
+  input[type="text"]:focus, input[type="number"]:focus { border-color: #888; box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+  input[type="range"] { width: 100%; accent-color: #534AB7; margin-top: 10px; }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-label { font-size: 12px; color: #6b6a64; min-width: 72px; text-align: right; }
+  .hint { font-size: 12px; color: #6b6a64; margin-top: 7px; min-height: 15px; }
+  .pto-note { font-size: 12px; margin-top: 7px; min-height: 15px; font-weight: 500; color: #6b6a64; }
+  .divider { border: none; border-top: 1px solid #eeecea; margin: 14px 0; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tog-btn { height: 36px; padding: 0 14px; border: 1px solid #d8d6ce; border-radius: 8px; background: #f5f5f2; color: #6b6a64; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .tog-btn:hover { background: #eeecea; }
+  .tog-btn.active { background: #fff; border-color: #888; color: #1a1a18; font-weight: 500; }
+  .badge-pill { display: inline-block; font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 500; background: #f5f5f2; color: #6b6a64; border: 1px solid #d8d6ce; margin-bottom: 14px; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .metric { background: #f5f5f2; border-radius: 8px; padding: 1rem; }
+  .metric-label { font-size: 13px; color: #6b6a64; margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 500; color: #1a1a18; }
+  .brow { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #eeecea; font-size: 14px; }
+  .brow:last-child { border-bottom: none; }
+  .brow-label { color: #6b6a64; }
+  .brow-value { font-weight: 500; color: #1a1a18; }
+  .excluded { color: #a32d2d; }
+  .pto-credit { color: #0F6E56; }
+  .total-label { font-weight: 500; font-size: 15px; color: #1a1a18; }
+  .total-value { font-weight: 500; font-size: 15px; color: #534AB7; }
+  .otp-total { font-weight: 500; font-size: 15px; color: #BA7517; }
+  .section-divider { border: none; border-top: 2px solid #eeecea; margin: 20px 0 16px; }
+  .hint-box { background: #f5f5f2; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #6b6a64; margin-bottom: 14px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Commission &amp; overtime premium calculator</h1>
+
+  <!-- COMMISSION SECTION -->
+  <div class="card">
+    <div class="input-grid">
+      <div class="span2">
+        <div class="field-label">Total enrolled volume</div>
+        <div class="prefix-wrap">
+          <div class="prefix">$</div>
+          <input class="pfx-input" type="text" id="enrolled" value="700,000" oninput="handleEnrolledInput()" />
+        </div>
+        <div class="slider-row">
+          <input type="range" id="slider" min="0" max="1500000" step="1000" value="700000" oninput="handleSlider()" />
+          <span class="slider-label" id="slider-label">$700,000</span>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">Number of clients</div>
+        <input type="number" id="clients" value="0" min="0" max="500" oninput="calcCommission()" />
+        <p class="hint">24+ clients unlocks 1.25%</p>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="two-col">
+      <div>
+        <div class="field-label">Months employed</div>
+        <div class="btn-group">
+          <button class="tog-btn active" id="m1" onclick="setMonth(1)">Month 1</button>
+          <button class="tog-btn" id="m2" onclick="setMonth(2)">Month 2</button>
+          <button class="tog-btn" id="m3" onclick="setMonth(3)">Month 3+</button>
+        </div>
+        <p class="hint" id="month-note">New hire — excluded base $100,000</p>
+      </div>
+      <div>
+        <div class="field-label">PTO days used <small>(max 3)</small></div>
+        <div class="btn-group">
+          <button class="tog-btn active" id="p0" onclick="setPTO(0)">0</button>
+          <button class="tog-btn" id="p1" onclick="setPTO(1)">1</button>
+          <button class="tog-btn" id="p2" onclick="setPTO(2)">2</button>
+          <button class="tog-btn" id="p3" onclick="setPTO(3)">3</button>
+        </div>
+        <p class="pto-note" id="pto-note">No PTO credit applied</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="badge-pill" id="tier-label">Tier 1 — Standard (1%)</span>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Commissionable base</div>
+        <div class="metric-value" id="base-out">$600,000</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Commission rate</div>
+        <div class="metric-value" id="rate-out" style="color:#1D9E75">1.00%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="brow">
+      <span class="brow-label">Enrolled volume</span>
+      <span class="brow-value" id="row-enrolled">$700,000</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">Less excluded base</span>
+      <span class="brow-value excluded" id="row-excluded">− $100,000</span>
+    </div>
+    <div class="brow" id="pto-row" style="display:none">
+      <span class="brow-label pto-credit">PTO credit applied</span>
+      <span class="brow-value pto-credit" id="row-pto">+ $0</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">Commissionable amount</span>
+      <span class="brow-value" id="row-base">$600,000</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">Commission earned</span>
+      <span class="brow-value" id="row-earned">$6,000</span>
+    </div>
+    <div class="brow" id="bonus-row" style="display:none">
+      <span class="brow-label">Elite milestone bonus</span>
+      <span class="brow-value" style="color:#185FA5">+ $1,500</span>
+    </div>
+    <div class="brow" style="padding-top:10px">
+      <span class="total-label">Total commission payout</span>
+      <span class="total-value" id="row-total">$6,000</span>
+    </div>
+  </div>
+
+  <!-- OTP SECTION -->
+  <hr class="section-divider" />
+
+  <div class="card">
+    <h2>Overtime premium (OTP)</h2>
+    <div class="hint-box">
+      Straight pay = (Regular hrs + OT hrs) × pay rate. RROP = (Straight Pay + Commission) ÷ (Regular hrs + OT hrs). OTP = (RROP − Base Rate) × each hour type.
+    </div>
+
+    <div class="two-col" style="margin-bottom:14px">
+      <div>
+        <div class="field-label">Base pay rate ($/hr)</div>
+        <div class="prefix-wrap">
+          <div class="prefix">$</div>
+          <input class="pfx-input" type="number" id="pay-rate" value="20" min="0" step="0.01" oninput="calcOTP()" />
+        </div>
+      </div>
+      <div>
+        <div class="field-label">Regular hours (excl. OT)</div>
+        <input type="number" id="reg-hours" value="160" min="0" step="0.01" oninput="calcOTP()" />
+      </div>
+    </div>
+
+    <div class="four-col" style="margin-bottom:6px">
+      <div>
+        <div class="field-label">OT hours</div>
+        <input type="number" id="ot-hours" value="0" min="0" step="0.01" oninput="calcOTP()" />
+      </div>
+      <div>
+        <div class="field-label">Sick hours</div>
+        <input type="number" id="sick-hours" value="0" min="0" step="0.01" oninput="calcOTP()" />
+      </div>
+      <div>
+        <div class="field-label">Meal premium hrs</div>
+        <input type="number" id="meal-hours" value="0" min="0" step="0.01" oninput="calcOTP()" />
+      </div>
+      <div>
+        <div class="field-label">Commission ($)</div>
+        <input type="number" id="otp-comm" value="0" min="0" step="0.01" oninput="calcOTP()" />
+        <p class="hint">Auto-fills from above</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="brow">
+      <span class="brow-label">Worked hours (reg + OT)</span>
+      <span class="brow-value" id="otp-worked">160.00</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">Straight pay (worked hrs × pay rate)</span>
+      <span class="brow-value" id="otp-straight">$3,200.00</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">RROP (regular rate of pay)</span>
+      <span class="brow-value" id="otp-rrop">$20.00/hr</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">RROP vs base rate difference</span>
+      <span class="brow-value" id="otp-diff">$0.00/hr</span>
+    </div>
+
+    <hr class="divider" style="margin:4px 0" />
+
+    <div class="brow" id="otp-ot-row">
+      <span class="brow-label">OT premium</span>
+      <span class="brow-value" id="otp-ot-val">$0.00</span>
+    </div>
+    <div class="brow" id="otp-sick-row">
+      <span class="brow-label">Sick premium</span>
+      <span class="brow-value" id="otp-sick-val">$0.00</span>
+    </div>
+    <div class="brow" id="otp-meal-row">
+      <span class="brow-label">Meal premium</span>
+      <span class="brow-value" id="otp-meal-val">$0.00</span>
+    </div>
+    <div class="brow" style="padding-top:10px">
+      <span class="total-label">Total OTP owed</span>
+      <span class="otp-total" id="otp-total">$0.00</span>
+    </div>
+  </div>
+
+  <!-- COMBINED TOTAL -->
+  <div class="card" style="border:1.5px solid #d8d6ce;background:#fff;">
+    <div class="brow">
+      <span class="brow-label">Total commission payout</span>
+      <span class="brow-value" id="grand-commission">$0.00</span>
+    </div>
+    <div class="brow">
+      <span class="brow-label">Total OTP owed</span>
+      <span class="brow-value" id="grand-otp">$0.00</span>
+    </div>
+    <div class="brow" style="padding-top:10px">
+      <span style="font-weight:500;font-size:16px;color:#1a1a18">Total earnings</span>
+      <span style="font-weight:500;font-size:18px;color:#534AB7" id="grand-total">$0.00</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentMonth = 1;
+let currentPTO = 0;
+
+function setMonth(m) {
+  currentMonth = m;
+  [1, 2, 3].forEach(i => document.getElementById('m' + i).classList.toggle('active', i === m));
+  const notes = { 1: 'New hire — excluded base $100,000', 2: 'Second month — excluded base $200,000', 3: 'Standard — excluded base $300,000' };
+  document.getElementById('month-note').textContent = notes[m];
+  calcCommission();
+}
+
+function setPTO(d) {
+  currentPTO = d;
+  [0, 1, 2, 3].forEach(i => document.getElementById('p' + i).classList.toggle('active', i === d));
+  calcCommission();
+}
+
+function fmtC(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+function fmtD(n) { return '$' + n.toFixed(2); }
+
+function calcCommission() {
+  const raw = document.getElementById('enrolled').value.replace(/[^0-9]/g, '');
+  const enrolled = parseFloat(raw) || 0;
+  const clients = parseInt(document.getElementById('clients').value) || 0;
+
+  const isElite  = enrolled >= 1000000;
+  const isGrowth = enrolled >= 800000 || clients >= 24;
+  const rate     = isGrowth ? 0.0125 : 0.01;
+
+  const monthCap     = currentMonth === 1 ? 100000 : currentMonth === 2 ? 200000 : 300000;
+  const ptoRate      = isElite ? 50000 : 25000;
+  const ptoCredit    = currentPTO * ptoRate;
+  const actualCredit = Math.min(ptoCredit, monthCap);
+  const effectiveExcluded = Math.max(0, monthCap - actualCredit);
+
+  const base   = Math.max(0, enrolled - effectiveExcluded);
+  const earned = base * rate;
+  const bonus  = isElite ? 1500 : 0;
+  const total  = earned + bonus;
+
+  document.getElementById('base-out').textContent     = fmtC(base);
+  document.getElementById('rate-out').textContent     = (rate * 100).toFixed(2) + '%';
+  document.getElementById('row-enrolled').textContent  = fmtC(enrolled);
+  document.getElementById('row-excluded').textContent  = '− ' + fmtC(Math.min(enrolled, monthCap));
+  document.getElementById('row-base').textContent     = fmtC(base);
+  document.getElementById('row-earned').textContent   = fmtC(earned);
+  document.getElementById('row-total').textContent    = fmtC(total);
+  document.getElementById('bonus-row').style.display  = isElite ? 'flex' : 'none';
+
+  const ptoRow  = document.getElementById('pto-row');
+  const ptoNote = document.getElementById('pto-note');
+  if (currentPTO > 0 && actualCredit > 0) {
+    ptoRow.style.display = 'flex';
+    document.getElementById('row-pto').textContent = '+ ' + fmtC(actualCredit);
+    const dayLabel = currentPTO === 1 ? '1 day' : currentPTO + ' days';
+    ptoNote.textContent = dayLabel + ' × ' + fmtC(ptoRate) + ' = ' + fmtC(actualCredit) + ' credit';
+    ptoNote.style.color = '#0F6E56';
+  } else {
+    ptoRow.style.display = 'none';
+    ptoNote.textContent  = 'No PTO credit applied';
+    ptoNote.style.color  = '#6b6a64';
+  }
+
+  const badge  = document.getElementById('tier-label');
+  const rateEl = document.getElementById('rate-out');
+  if (isElite) {
+    badge.textContent = 'Tier 3 — Elite (1.25% + bonus)';
+    badge.style.cssText = 'display:inline-block;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;margin-bottom:14px';
+    rateEl.style.color = '#185FA5';
+  } else if (isGrowth) {
+    badge.textContent = 'Tier 2 — Growth (1.25%)';
+    badge.style.cssText = 'display:inline-block;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;background:#E1F5EE;color:#0F6E56;border:1px solid #9FE1CB;margin-bottom:14px';
+    rateEl.style.color = '#1D9E75';
+  } else {
+    badge.textContent = 'Tier 1 — Standard (1%)';
+    badge.style.cssText = 'display:inline-block;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500;background:#f5f5f2;color:#6b6a64;border:1px solid #d8d6ce;margin-bottom:14px';
+    rateEl.style.color = '#1D9E75';
+  }
+
+  document.getElementById('slider').value            = Math.min(1500000, enrolled);
+  document.getElementById('slider-label').textContent = fmtC(enrolled);
+
+  // Auto-fill commission into OTP field
+  document.getElementById('otp-comm').value = total.toFixed(2);
+  calcOTP();
+}
+
+function calcOTP() {
+  const payRate   = parseFloat(document.getElementById('pay-rate').value)   || 0;
+  const regHours  = parseFloat(document.getElementById('reg-hours').value)  || 0;
+  const otHours   = parseFloat(document.getElementById('ot-hours').value)   || 0;
+  const sickHours = parseFloat(document.getElementById('sick-hours').value) || 0;
+  const mealHours = parseFloat(document.getElementById('meal-hours').value) || 0;
+  const commBonus = parseFloat(document.getElementById('otp-comm').value)   || 0;
+
+  // Worked hours = regular + OT (matches sheet: K = D + E)
+  const workedHours = regHours + otHours;
+
+  // Straight pay = worked hours × pay rate (matches sheet: L = K * H)
+  const straightPay = workedHours * payRate;
+
+  // RROP = (Straight Pay + Commission) / (Regular hrs + OT hrs) (matches sheet: N = (L+I)/(D+E))
+  const rrop = workedHours > 0 ? (straightPay + commBonus) / workedHours : 0;
+
+  // Premiums = RROP × hours − base rate × hours (matches sheet: P = N*E - H*E)
+  const otPremium   = otHours   > 0 ? (rrop - payRate) * otHours   : 0;
+  const sickPremium = sickHours > 0 ? (rrop - payRate) * sickHours : 0;
+  const mealPremium = mealHours > 0 ? (rrop - payRate) * mealHours : 0;
+  const totalOTP    = otPremium + sickPremium + mealPremium;
+
+  document.getElementById('otp-worked').textContent   = workedHours.toFixed(2) + ' hrs';
+  document.getElementById('otp-straight').textContent = fmtD(straightPay);
+  document.getElementById('otp-rrop').textContent     = fmtD(rrop) + '/hr';
+  document.getElementById('otp-diff').textContent     = fmtD(rrop - payRate) + '/hr';
+  document.getElementById('otp-ot-val').textContent   = fmtD(otPremium);
+  document.getElementById('otp-sick-val').textContent = fmtD(sickPremium);
+  document.getElementById('otp-meal-val').textContent = fmtD(mealPremium);
+  document.getElementById('otp-total').textContent    = fmtD(totalOTP);
+
+  // Grand total
+  const commTotal = parseFloat(document.getElementById('row-total').textContent.replace(/[$,]/g, '')) || 0;
+  document.getElementById('grand-commission').textContent = fmtD(commTotal);
+  document.getElementById('grand-otp').textContent        = fmtD(totalOTP);
+  document.getElementById('grand-total').textContent      = fmtD(commTotal + totalOTP);
+
+  document.getElementById('otp-ot-row').style.opacity   = otHours   > 0 ? '1' : '0.4';
+  document.getElementById('otp-sick-row').style.opacity = sickHours > 0 ? '1' : '0.4';
+  document.getElementById('otp-meal-row').style.opacity = mealHours > 0 ? '1' : '0.4';
+}
+
+function handleEnrolledInput() {
+  const el  = document.getElementById('enrolled');
+  const raw = el.value.replace(/[^0-9]/g, '');
+  const num = parseFloat(raw) || 0;
+  const pos = el.selectionStart;
+  const oldLen = el.value.length;
+  const formatted = num ? num.toLocaleString('en-US') : '';
+  el.value = formatted;
+  el.setSelectionRange(pos + (formatted.length - oldLen), pos + (formatted.length - oldLen));
+  calcCommission();
+}
+
+function handleSlider() {
+  const v = parseInt(document.getElementById('slider').value) || 0;
+  document.getElementById('enrolled').value = v.toLocaleString('en-US');
+  calcCommission();
+}
+
+calcCommission();
+</script>
+</body>
+</html>
